@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Motos</title>
+    <style>
+        body { font-family: Arial, Helvetica, sans-serif; background-color: #f4f6f8; margin: 40px; color: #333; }
+        h1 { color: #2c3e50; }
+        .btn-nuevo { display: inline-block; background-color: #2c7be5; color: white; padding: 8px 16px;
+                     border-radius: 5px; text-decoration: none; margin-bottom: 20px; }
+        .btn-nuevo:hover { background-color: #1a5bb8; }
+        table { width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background-color: #2c3e50; color: white; }
+        tr:hover { background-color: #f1f5f9; }
+        a.accion-editar { color: #2c7be5; text-decoration: none; }
+        a.accion-eliminar { color: #e63946; text-decoration: none; margin-left: 10px; }
+        a.accion-editar:hover, a.accion-eliminar:hover { text-decoration: underline; }
+        .nav-link { margin-bottom: 15px; display: inline-block; color: #555; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <a href="{{ url_for('listar_clientes') }}" class="nav-link">← Clientes</a>
+    <a href="{{ url_for('listar_reparaciones') }}" class="nav-link">Ver reparaciones →</a><br>
+    <h1>Motos registradas</h1>
+    <a href="{{ url_for('nueva_moto') }}" class="btn-nuevo">+ Nueva moto</a>
+    <table>
+        <tr>
+            <th>Marca</th><th>Modelo</th><th>Patente</th><th>Año</th><th>Dueño</th><th>Acciones</th>
+        </tr>
+        {% for m in motos %}
+        <tr>
+            <td>{{ m[1] }}</td>
+            <td>{{ m[2] }}</td>
+            <td>{{ m[3] }}</td>
+            <td>{{ m[4] }}</td>
+            <td>{{ m[5] }} {{ m[6] }}</td>
+            <td>
+                <a href="{{ url_for('editar_moto', id_moto=m[0]) }}" class="accion-editar">Editar</a>
+                <a href="{{ url_for('eliminar_moto', id_moto=m[0]) }}" class="accion-eliminar"
+                   onclick="return confirm('¿Seguro que querés eliminar esta moto?')">Eliminar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
