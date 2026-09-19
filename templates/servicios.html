@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Reparaciones</title>
+    <title>Servicios</title>
     <style>
         body { font-family: Arial, Helvetica, sans-serif; background-color: #f4f6f8; margin: 40px; color: #333; }
         h1 { color: #2c3e50; }
@@ -23,8 +23,8 @@
 </head>
 <body>
     <a href="{{ url_for('listar_motos') }}" class="nav-link">← Motos</a>
-    <h1>Reparaciones</h1>
-    <a href="{{ url_for('nueva_reparacion') }}" class="btn-nuevo">+ Nueva reparación</a>
+    <h1>Servicios</h1>
+    <a href="{{ url_for('nuevo_servicio') }}" class="btn-nuevo">+ Nuevo servicio</a>
     <table>
         <tr>
             <th>Moto</th><th>Descripción</th><th>Ingreso</th><th>Salida</th>
@@ -39,9 +39,9 @@
             <td>${{ r[4] }}</td>
             <td class="estado-{{ r[5] }}">{{ r[5] }}</td>
             <td>
-                <a href="{{ url_for('editar_reparacion', id_reparacion=r[0]) }}" class="accion-editar">Editar</a>
-                <a href="{{ url_for('eliminar_reparacion', id_reparacion=r[0]) }}" class="accion-eliminar"
-                   onclick="return confirm('¿Seguro que querés eliminar esta reparación?')">Eliminar</a>
+                <a href="{{ url_for('editar_servicio', id_reparacion=r[0]) }}" class="accion-editar">Editar</a>
+                <a href="{{ url_for('eliminar_servicio', id_reparacion=r[0]) }}" class="accion-eliminar"
+                   onclick="return confirm('¿Seguro que querés eliminar este servicio?')">Eliminar</a>
             </td>
         </tr>
         {% endfor %}

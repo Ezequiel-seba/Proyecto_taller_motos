@@ -138,23 +138,23 @@ def eliminar_moto(id_moto):
     cur.close()
     return redirect(url_for('listar_motos'))
 
-# LISTAR reparaciones (Read)
-@app.route('/reparaciones')
-def listar_reparaciones():
+# LISTAR servicios (Read)
+@app.route('/servicios')
+def listar_reparaciones_servicios():
     cur = mysql.connection.cursor()
-    cur.execute("""SELECT reparaciones.idreparacion, reparaciones.Descripcion,
-                          reparaciones.fecha_ingreso, reparaciones.fecha_salida,
-                          reparaciones.costo, reparaciones.estado,
+    cur.execute("""SELECT servicios.idservicios, servicios.Descripcion,
+                          servicios.fecha_ingreso, servicios.fecha_salida,
+                          servicios.costo, servicios.estado,
                           motos.marca, motos.modelo, motos.patente, motos.idmotos
-                   FROM reparaciones
-                   JOIN motos ON reparaciones.idmotos = motos.idmotos""")
+                   FROM servicios
+                   JOIN motos ON servicios.idmotos = motos.idmotos""")
     reparaciones = cur.fetchall()
     cur.close()
-    return render_template('reparaciones.html', reparaciones=reparaciones)
+    return render_template('servicios.html', reparaciones=reparaciones)
 
-# ALTA reparación (Create)
-@app.route('/reparaciones/nueva', methods=['GET', 'POST'])
-def nueva_reparacion():
+# ALTA servicio (Create)
+@app.route('/servicios/nueva', methods=['GET', 'POST'])
+def nuevo_servicio():
     cur = mysql.connection.cursor()
 
     if request.method == 'POST':
@@ -165,24 +165,23 @@ def nueva_reparacion():
         costo = request.form['costo']
         estado = request.form['estado']
 
-        cur.execute("""INSERT INTO reparaciones (idmotos, Descripcion, fecha_ingreso,
+        cur.execute("""INSERT INTO servicios (idmotos, Descripcion, fecha_ingreso,
                        fecha_salida, costo, estado)
                        VALUES (%s, %s, %s, %s, %s, %s)""",
                     (idmotos, descripcion, fecha_ingreso, fecha_salida, costo, estado))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('listar_reparaciones'))
+        return redirect(url_for('listar_reparaciones_servicios'))
 
-    # Para el formulario, necesitamos la lista de motos existentes
     cur.execute("""SELECT motos.idmotos, motos.marca, motos.modelo, motos.patente
                    FROM motos""")
     motos = cur.fetchall()
     cur.close()
-    return render_template('form_reparacion.html', reparacion=None, motos=motos)
+    return render_template('form_servicio.html', reparacion=None, motos=motos)
 
-# MODIFICACIÓN reparación (Update)
-@app.route('/reparaciones/editar/<int:id_reparacion>', methods=['GET', 'POST'])
-def editar_reparacion(id_reparacion):
+# MODIFICACIÓN servicio (Update)
+@app.route('/servicios/editar/<int:id_reparacion>', methods=['GET', 'POST'])
+def editar_servicio(id_reparacion):
     cur = mysql.connection.cursor()
 
     if request.method == 'POST':
@@ -193,31 +192,31 @@ def editar_reparacion(id_reparacion):
         costo = request.form['costo']
         estado = request.form['estado']
 
-        cur.execute("""UPDATE reparaciones SET idmotos=%s, Descripcion=%s,
+        cur.execute("""UPDATE servicios SET idmotos=%s, Descripcion=%s,
                        fecha_ingreso=%s, fecha_salida=%s, costo=%s, estado=%s
-                       WHERE idreparacion=%s""",
+                       WHERE idservicios=%s""",
                     (idmotos, descripcion, fecha_ingreso, fecha_salida, costo,
                      estado, id_reparacion))
         mysql.connection.commit()
         cur.close()
-        return redirect(url_for('listar_reparaciones'))
+        return redirect(url_for('listar_reparaciones_servicios'))
 
-    cur.execute("SELECT * FROM reparaciones WHERE idreparacion=%s", (id_reparacion,))
+    cur.execute("SELECT * FROM servicios WHERE idservicios=%s", (id_reparacion,))
     reparacion = cur.fetchone()
 
     cur.execute("SELECT idmotos, marca, modelo, patente FROM motos")
     motos = cur.fetchall()
     cur.close()
-    return render_template('form_reparacion.html', reparacion=reparacion, motos=motos)
+    return render_template('form_servicio.html', reparacion=reparacion, motos=motos)
 
-# BAJA reparación (Delete)
-@app.route('/reparaciones/eliminar/<int:id_reparacion>')
-def eliminar_reparacion(id_reparacion):
+# BAJA servicio (Delete)
+@app.route('/servicios/eliminar/<int:id_reparacion>')
+def eliminar_servicio(id_reparacion):
     cur = mysql.connection.cursor()
-    cur.execute("DELETE FROM reparaciones WHERE idreparacion=%s", (id_reparacion,))
+    cur.execute("DELETE FROM servicios WHERE idservicios=%s", (id_reparacion,))
     mysql.connection.commit()
     cur.close()
-    return redirect(url_for('listar_reparaciones'))
+    return redirect(url_for('listar_reparaciones_servicios'))
 
 if __name__ == '__main__':
     app.run(debug=True)
