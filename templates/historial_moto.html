@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Historial de la moto{% endblock %}
+{% block contenido %}
+    <h1>Historial de {{ moto[2] }} {{ moto[3] }} ({{ moto[4] }})</h1>
+    {% if reparaciones %}
+    <table>
+        <tr>
+            <th>Descripción</th><th>Ingreso</th><th>Salida</th><th>Costo</th><th>Estado</th>
+        </tr>
+        {% for r in reparaciones %}
+        <tr>
+            <td>{{ r[2] }}</td>
+            <td>{{ r[3] }}</td>
+            <td>{{ r[4] if r[4] else '-' }}</td>
+            <td>${{ r[5] }}</td>
+            <td class="estado-{{ r[6] }}">{{ r[6] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>Esta moto todavía no tiene reparaciones registradas.</p>
+    {% endif %}
+    <a href="{{ url_for('listar_motos') }}" class="volver">← Volver a motos</a>
+{% endblock %}

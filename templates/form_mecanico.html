@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if mecanico else 'Nuevo' }} mecánico{% endblock %}
+{% block contenido %}
+    <h1>{{ 'Editar' if mecanico else 'Nuevo' }} mecánico</h1>
+    <form method="POST">
+        <label>Nombre</label>
+        <input type="text" name="nombre" value="{{ mecanico[1] if mecanico else '' }}" required>
+        <label>Apellido</label>
+        <input type="text" name="apellido" value="{{ mecanico[2] if mecanico else '' }}" required>
+        <label>Documento</label>
+        <input type="text" name="documento" value="{{ mecanico[3] if mecanico else '' }}" required>
+        <label>Teléfono</label>
+        <input type="text" name="telefono" value="{{ mecanico[4] if mecanico else '' }}" required>
+        <label>Dirección</label>
+        <input type="text" name="direccion" value="{{ mecanico[5] if mecanico else '' }}" required>
+        <button type="submit">Guardar</button>
+    </form>
+    <a href="{{ url_for('listar_mecanicos') }}" class="volver">← Volver al listado</a>
+{% endblock %}

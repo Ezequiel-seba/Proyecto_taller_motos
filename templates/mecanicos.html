@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Mecánicos{% endblock %}
+{% block contenido %}
+    <h1>Mecánicos</h1>
+    <a href="{{ url_for('nuevo_mecanico') }}" class="btn-nuevo">+ Nuevo mecánico</a>
+    <table>
+        <tr>
+            <th>Nombre</th><th>Apellido</th><th>Documento</th><th>Teléfono</th><th>Dirección</th><th>Acciones</th>
+        </tr>
+        {% for m in mecanicos %}
+        <tr>
+            <td>{{ m[1] }}</td>
+            <td>{{ m[2] }}</td>
+            <td>{{ m[3] }}</td>
+            <td>{{ m[4] }}</td>
+            <td>{{ m[5] }}</td>
+            <td>
+                <a href="{{ url_for('editar_mecanico', id_mecanico=m[0]) }}" class="accion-editar">Editar</a>
+                <a href="{{ url_for('eliminar_mecanico', id_mecanico=m[0]) }}" class="accion-eliminar"
+                   onclick="return confirm('¿Seguro que querés eliminar este mecánico?')">Eliminar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

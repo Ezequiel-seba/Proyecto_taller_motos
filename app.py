@@ -218,5 +218,82 @@ def eliminar_servicio(id_reparacion):
     cur.close()
     return redirect(url_for('listar_reparaciones_servicios'))
 
+# LISTAR mecánicos (Read)
+@app.route('/mecanicos')
+def listar_mecanicos():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM mecanicos")
+    mecanicos = cur.fetchall()
+    cur.close()
+    return render_template('mecanicos.html', mecanicos=mecanicos)
+
+# ALTA mecánico (Create)
+@app.route('/mecanicos/nuevo', methods=['GET', 'POST'])
+def nuevo_mecanico():
+    if request.method == 'POST':
+        nombre = request.form['nombre'].strip()
+        apellido = request.form['apellido'].strip()
+        documento = request.form['documento'].strip()
+        telefono = request.form['telefono'].strip()
+        direccion = request.form['direccion'].strip()
+
+        cur = mysql.connection.cursor()
+        cur.execute("""INSERT INTO mecanicos (nombre, apellido, documento, telefono, direccion)
+                       VALUES (%s, %s, %s, %s, %s)""",
+                    (nombre, apellido, documento, telefono, direccion))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('listar_mecanicos'))
+
+    return render_template('form_mecanico.html', mecanico=None)
+
+# MODIFICACIÓN mecánico (Update)
+@app.route('/mecanicos/editar/<int:id_mecanico>', methods=['GET', 'POST'])
+def editar_mecanico(id_mecanico):
+    cur = mysql.connection.cursor()
+
+    if request.method == 'POST':
+        nombre = request.form['nombre'].strip()
+        apellido = request.form['apellido'].strip()
+        documento = request.form['documento'].strip()
+        telefono = request.form['telefono'].strip()
+        direccion = request.form['direccion'].strip()
+
+        cur.execute("""UPDATE mecanicos SET nombre=%s, apellido=%s, documento=%s,
+                       telefono=%s, direccion=%s WHERE idmecanicos=%s""",
+                    (nombre, apellido, documento, telefono, direccion, id_mecanico))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('listar_mecanicos'))
+
+    cur.execute("SELECT * FROM mecanicos WHERE idmecanicos=%s", (id_mecanico,))
+    mecanico = cur.fetchone()
+    cur.close()
+    return render_template('form_mecanico.html', mecanico=mecanico)
+
+# BAJA mecánico (Delete)
+@app.route('/mecanicos/eliminar/<int:id_mecanico>')
+def eliminar_mecanico(id_mecanico):
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM mecanicos WHERE idmecanicos=%s", (id_mecanico,))
+    mysql.connection.commit()
+    cur.close()
+    return redirect(url_for('listar_mecanicos'))
+
+# HISTORIAL de una moto (todas sus reparaciones)
+@app.route('/motos/historial/<int:id_moto>')
+def historial_moto(id_moto):
+    cur = mysql.connection.cursor()
+
+    cur.execute("SELECT * FROM motos WHERE idmotos=%s", (id_moto,))
+    moto = cur.fetchone()
+
+    cur.execute("""SELECT * FROM servicios
+                   WHERE idmotos=%s ORDER BY fecha_ingreso DESC""", (id_moto,))
+    reparaciones = cur.fetchall()
+    cur.close()
+
+    return render_template('historial_moto.html', moto=moto, reparaciones=reparaciones)
+
 if __name__ == '__main__':
     app.run(debug=True)
