@@ -1,13 +1,25 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
+from flask_bcrypt import Bcrypt
 import config
 
 app = Flask(__name__)
 app.config.from_object(config)
 mysql = MySQL(app)
+bcrypt = Bcrypt(app)
+from functools import wraps
+
+def login_requerido(f):
+    @wraps(f)
+    def decorada(*args, **kwargs):
+        if 'usuario' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorada
 
 # LISTAR (Read)
 @app.route('/clientes')
+@login_requerido
 def listar_clientes():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM clientes")
@@ -17,6 +29,7 @@ def listar_clientes():
 
 # ALTA (Create)
 @app.route('/clientes/nuevo', methods=['GET', 'POST'])
+@login_requerido
 def nuevo_cliente():
     if request.method == 'POST':
         nombre = request.form['nombre'].strip()
@@ -36,6 +49,7 @@ def nuevo_cliente():
 
 # MODIFICACIÓN (Update)
 @app.route('/clientes/editar/<int:id_cliente>', methods=['GET', 'POST'])
+@login_requerido
 def editar_cliente(id_cliente):
     cur = mysql.connection.cursor()
 
@@ -59,6 +73,7 @@ def editar_cliente(id_cliente):
 
 # BAJA (Delete)
 @app.route('/clientes/eliminar/<int:id_cliente>')
+@login_requerido
 def eliminar_cliente(id_cliente):
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM clientes WHERE idclientes=%s", (id_cliente,))
@@ -68,6 +83,7 @@ def eliminar_cliente(id_cliente):
 
 # LISTAR motos (Read)
 @app.route('/motos')
+@login_requerido
 def listar_motos():
     cur = mysql.connection.cursor()
     cur.execute("""SELECT motos.idmotos, motos.marca, motos.modelo, motos.patente,
@@ -80,6 +96,7 @@ def listar_motos():
 
 # ALTA moto (Create)
 @app.route('/motos/nueva', methods=['GET', 'POST'])
+@login_requerido
 def nueva_moto():
     cur = mysql.connection.cursor()
 
@@ -104,6 +121,7 @@ def nueva_moto():
 
 # MODIFICACIÓN moto (Update)
 @app.route('/motos/editar/<int:id_moto>', methods=['GET', 'POST'])
+@login_requerido
 def editar_moto(id_moto):
     cur = mysql.connection.cursor()
 
@@ -131,6 +149,7 @@ def editar_moto(id_moto):
 
 # BAJA moto (Delete)
 @app.route('/motos/eliminar/<int:id_moto>')
+@login_requerido
 def eliminar_moto(id_moto):
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM motos WHERE idmotos=%s", (id_moto,))
@@ -140,6 +159,7 @@ def eliminar_moto(id_moto):
 
 # LISTAR servicios (Read)
 @app.route('/servicios')
+@login_requerido
 def listar_reparaciones_servicios():
     cur = mysql.connection.cursor()
     cur.execute("""SELECT servicios.idservicios, servicios.Descripcion,
@@ -154,6 +174,7 @@ def listar_reparaciones_servicios():
 
 # ALTA servicio (Create)
 @app.route('/servicios/nueva', methods=['GET', 'POST'])
+@login_requerido
 def nuevo_servicio():
     cur = mysql.connection.cursor()
 
@@ -181,6 +202,7 @@ def nuevo_servicio():
 
 # MODIFICACIÓN servicio (Update)
 @app.route('/servicios/editar/<int:id_reparacion>', methods=['GET', 'POST'])
+@login_requerido
 def editar_servicio(id_reparacion):
     cur = mysql.connection.cursor()
 
@@ -211,6 +233,7 @@ def editar_servicio(id_reparacion):
 
 # BAJA servicio (Delete)
 @app.route('/servicios/eliminar/<int:id_reparacion>')
+@login_requerido
 def eliminar_servicio(id_reparacion):
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM servicios WHERE idservicios=%s", (id_reparacion,))
@@ -220,6 +243,7 @@ def eliminar_servicio(id_reparacion):
 
 # LISTAR mecánicos (Read)
 @app.route('/mecanicos')
+@login_requerido
 def listar_mecanicos():
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM mecanicos")
@@ -229,6 +253,7 @@ def listar_mecanicos():
 
 # ALTA mecánico (Create)
 @app.route('/mecanicos/nuevo', methods=['GET', 'POST'])
+@login_requerido
 def nuevo_mecanico():
     if request.method == 'POST':
         nombre = request.form['nombre'].strip()
@@ -249,6 +274,7 @@ def nuevo_mecanico():
 
 # MODIFICACIÓN mecánico (Update)
 @app.route('/mecanicos/editar/<int:id_mecanico>', methods=['GET', 'POST'])
+@login_requerido
 def editar_mecanico(id_mecanico):
     cur = mysql.connection.cursor()
 
@@ -273,6 +299,7 @@ def editar_mecanico(id_mecanico):
 
 # BAJA mecánico (Delete)
 @app.route('/mecanicos/eliminar/<int:id_mecanico>')
+@login_requerido
 def eliminar_mecanico(id_mecanico):
     cur = mysql.connection.cursor()
     cur.execute("DELETE FROM mecanicos WHERE idmecanicos=%s", (id_mecanico,))
@@ -282,6 +309,7 @@ def eliminar_mecanico(id_mecanico):
 
 # HISTORIAL de una moto (todas sus reparaciones)
 @app.route('/motos/historial/<int:id_moto>')
+@login_requerido
 def historial_moto(id_moto):
     cur = mysql.connection.cursor()
 
@@ -294,6 +322,32 @@ def historial_moto(id_moto):
     cur.close()
 
     return render_template('historial_moto.html', moto=moto, reparaciones=reparaciones)
+
+# LOGIN
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        usuario = request.form['usuario'].strip()
+        contrasena = request.form['contrasena']
+
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM usuarios WHERE usuario=%s", (usuario,))
+        usuario_db = cur.fetchone()
+        cur.close()
+
+        if usuario_db and bcrypt.check_password_hash(usuario_db[2], contrasena):
+            session['usuario'] = usuario_db[1]
+            return redirect(url_for('listar_clientes'))
+        else:
+            return render_template('login.html', error="Usuario o contraseña incorrectos.")
+
+    return render_template('login.html', error=None)
+
+# LOGOUT
+@app.route('/logout')
+def logout():
+    session.pop('usuario', None)
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=True)
