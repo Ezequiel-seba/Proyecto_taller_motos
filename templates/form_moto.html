@@ -2,7 +2,13 @@
 {% block title %}{{ 'Editar' if moto else 'Nueva' }} moto{% endblock %}
 {% block contenido %}
     <h1>{{ 'Editar' if moto else 'Nueva' }} moto</h1>
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
+        <label>Foto (opcional)</label>
+        <input type="file" name="foto" accept="image/*">
+        {% if moto and moto[6] %}
+        <p><small>Foto actual: {{ moto[6] }}</small></p>
+        {% endif %}
+
         <label>Dueño</label>
         <select name="idclientes" required>
             <option value="">-- Seleccionar cliente --</option>

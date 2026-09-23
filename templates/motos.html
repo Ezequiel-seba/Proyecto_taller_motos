@@ -5,10 +5,18 @@
     <a href="{{ url_for('nueva_moto') }}" class="btn-nuevo">+ Nueva moto</a>
     <table>
         <tr>
+            <th>Foto</th>
             <th>Marca</th><th>Modelo</th><th>Patente</th><th>Año</th><th>Dueño</th><th>Acciones</th>
         </tr>
         {% for m in motos %}
         <tr>
+            <td>
+                {% if m[7] %}
+                <img src="{{ url_for('static', filename='uploads/motos/' + m[7]) }}" width="60">
+                {% else %}
+                -
+                {% endif %}
+            </td>
             <td>{{ m[1] }}</td>
             <td>{{ m[2] }}</td>
             <td>{{ m[3] }}</td>

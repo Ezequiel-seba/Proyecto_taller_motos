@@ -5,12 +5,21 @@
     <form method="POST">
         <label>Moto</label>
         <select name="idmotos" required>
-            <option value="">-- Seleccionar moto --</option>
-            {% for m in motos %}
-            <option value="{{ m[0] }}" {% if reparacion and reparacion[1] == m[0] %}selected{% endif %}>
-                {{ m[1] }} {{ m[2] }} - {{ m[3] }}
-            </option>
-            {% endfor %}
+        <option value="">-- Seleccionar moto --</option>
+        {% for m in motos %}
+        <option value="{{ m[0] }}" {% if reparacion and reparacion[1] == m[0] %}selected{% endif %}>
+            {{ m[1] }} {{ m[2] }} - {{ m[3] }}
+        </option>
+        {% endfor %}
+        </select>
+        <label>Mecánico</label>
+        <select name="idmecanicos" required>
+        <option value="">-- Seleccionar mecánico --</option>
+        {% for me in mecanicos %}
+        <option value="{{ me[0] }}" {% if reparacion and reparacion[7] == me[0] %}selected{% endif %}>
+            {{ me[1] }} {{ me[2] }}
+        </option>
+        {% endfor %}
         </select>
         <label>Descripción</label>
         <textarea name="descripcion" required>{{ reparacion[2] if reparacion else '' }}</textarea>

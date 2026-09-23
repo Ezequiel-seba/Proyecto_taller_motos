@@ -2,17 +2,25 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
 from flask_bcrypt import Bcrypt
 import config
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config.from_object(config)
 mysql = MySQL(app)
 bcrypt = Bcrypt(app)
 from functools import wraps
+UPLOAD_FOLDER = 'static/uploads/motos'
+EXTENSIONES_PERMITIDAS = {'png', 'jpg', 'jpeg'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def extension_valida(nombre_archivo):
+    return '.' in nombre_archivo and nombre_archivo.rsplit('.', 1)[1].lower() in EXTENSIONES_PERMITIDAS
 
 def login_requerido(f):
     @wraps(f)
     def decorada(*args, **kwargs):
-        if 'usuario' not in session:
+        if 'correo' not in session:
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorada
@@ -87,7 +95,7 @@ def eliminar_cliente(id_cliente):
 def listar_motos():
     cur = mysql.connection.cursor()
     cur.execute("""SELECT motos.idmotos, motos.marca, motos.modelo, motos.patente,
-                          motos.ano, clientes.nombre, clientes.apellido, motos.idclientes
+                          motos.ano, clientes.nombre, clientes.apellido, motos.foto
                    FROM motos
                    JOIN clientes ON motos.idclientes = clientes.idclientes""")
     motos = cur.fetchall()
@@ -107,9 +115,15 @@ def nueva_moto():
         patente = request.form['patente'].strip()
         ano = request.form['ano']
 
-        cur.execute("""INSERT INTO motos (idclientes, marca, modelo, patente, ano)
-                       VALUES (%s, %s, %s, %s, %s)""",
-                    (idclientes, marca, modelo, patente, ano))
+        nombre_foto = None
+        archivo = request.files.get('foto')
+        if archivo and archivo.filename != '' and extension_valida(archivo.filename):
+            nombre_foto = secure_filename(f"{patente}_{archivo.filename}")
+            archivo.save(os.path.join(app.config['UPLOAD_FOLDER'], nombre_foto))
+
+        cur.execute("""INSERT INTO motos (idclientes, marca, modelo, patente, ano, foto)
+                       VALUES (%s, %s, %s, %s, %s, %s)""",
+                    (idclientes, marca, modelo, patente, ano, nombre_foto))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('listar_motos'))
@@ -132,16 +146,24 @@ def editar_moto(id_moto):
         patente = request.form['patente'].strip()
         ano = request.form['ano']
 
+        cur.execute("SELECT foto FROM motos WHERE idmotos=%s", (id_moto,))
+        foto_actual = cur.fetchone()[0]
+        nombre_foto = foto_actual
+
+        archivo = request.files.get('foto')
+        if archivo and archivo.filename != '' and extension_valida(archivo.filename):
+            nombre_foto = secure_filename(f"{patente}_{archivo.filename}")
+            archivo.save(os.path.join(app.config['UPLOAD_FOLDER'], nombre_foto))
+
         cur.execute("""UPDATE motos SET idclientes=%s, marca=%s, modelo=%s,
-                       patente=%s, ano=%s WHERE idmotos=%s""",
-                    (idclientes, marca, modelo, patente, ano, id_moto))
+                       patente=%s, ano=%s, foto=%s WHERE idmotos=%s""",
+                    (idclientes, marca, modelo, patente, ano, nombre_foto, id_moto))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('listar_motos'))
 
     cur.execute("SELECT * FROM motos WHERE idmotos=%s", (id_moto,))
     moto = cur.fetchone()
-
     cur.execute("SELECT idclientes, nombre, apellido FROM clientes")
     clientes = cur.fetchall()
     cur.close()
@@ -165,9 +187,11 @@ def listar_reparaciones_servicios():
     cur.execute("""SELECT servicios.idservicios, servicios.Descripcion,
                           servicios.fecha_ingreso, servicios.fecha_salida,
                           servicios.costo, servicios.estado,
-                          motos.marca, motos.modelo, motos.patente, motos.idmotos
+                          motos.marca, motos.modelo, motos.patente, motos.idmotos,
+                          mecanicos.nombre, mecanicos.apellido
                    FROM servicios
-                   JOIN motos ON servicios.idmotos = motos.idmotos""")
+                   JOIN motos ON servicios.idmotos = motos.idmotos
+                   JOIN mecanicos ON servicios.idmecanicos = mecanicos.idmecanicos""")
     reparaciones = cur.fetchall()
     cur.close()
     return render_template('servicios.html', reparaciones=reparaciones)
@@ -177,47 +201,48 @@ def listar_reparaciones_servicios():
 @login_requerido
 def nuevo_servicio():
     cur = mysql.connection.cursor()
-
     if request.method == 'POST':
         idmotos = request.form['idmotos']
+        idmecanicos = request.form['idmecanicos']
         descripcion = request.form['descripcion'].strip()
         fecha_ingreso = request.form['fecha_ingreso']
         fecha_salida = request.form['fecha_salida'] or None
         costo = request.form['costo']
         estado = request.form['estado']
 
-        cur.execute("""INSERT INTO servicios (idmotos, Descripcion, fecha_ingreso,
-                       fecha_salida, costo, estado)
-                       VALUES (%s, %s, %s, %s, %s, %s)""",
-                    (idmotos, descripcion, fecha_ingreso, fecha_salida, costo, estado))
+        cur.execute("""INSERT INTO servicios (idmotos, idmecanicos, Descripcion,
+                       fecha_ingreso, fecha_salida, costo, estado)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                    (idmotos, idmecanicos, descripcion, fecha_ingreso, fecha_salida, costo, estado))
         mysql.connection.commit()
         cur.close()
         return redirect(url_for('listar_reparaciones_servicios'))
 
-    cur.execute("""SELECT motos.idmotos, motos.marca, motos.modelo, motos.patente
-                   FROM motos""")
+    cur.execute("SELECT idmotos, marca, modelo, patente FROM motos")
     motos = cur.fetchall()
+    cur.execute("SELECT idmecanicos, nombre, apellido FROM mecanicos")
+    mecanicos = cur.fetchall()
     cur.close()
-    return render_template('form_servicio.html', reparacion=None, motos=motos)
+    return render_template('form_servicio.html', reparacion=None, motos=motos, mecanicos=mecanicos)
 
 # MODIFICACIÓN servicio (Update)
 @app.route('/servicios/editar/<int:id_reparacion>', methods=['GET', 'POST'])
 @login_requerido
 def editar_servicio(id_reparacion):
     cur = mysql.connection.cursor()
-
     if request.method == 'POST':
         idmotos = request.form['idmotos']
+        idmecanicos = request.form['idmecanicos']
         descripcion = request.form['descripcion'].strip()
         fecha_ingreso = request.form['fecha_ingreso']
         fecha_salida = request.form['fecha_salida'] or None
         costo = request.form['costo']
         estado = request.form['estado']
 
-        cur.execute("""UPDATE servicios SET idmotos=%s, Descripcion=%s,
+        cur.execute("""UPDATE servicios SET idmotos=%s, idmecanicos=%s, Descripcion=%s,
                        fecha_ingreso=%s, fecha_salida=%s, costo=%s, estado=%s
                        WHERE idservicios=%s""",
-                    (idmotos, descripcion, fecha_ingreso, fecha_salida, costo,
+                    (idmotos, idmecanicos, descripcion, fecha_ingreso, fecha_salida, costo,
                      estado, id_reparacion))
         mysql.connection.commit()
         cur.close()
@@ -225,11 +250,12 @@ def editar_servicio(id_reparacion):
 
     cur.execute("SELECT * FROM servicios WHERE idservicios=%s", (id_reparacion,))
     reparacion = cur.fetchone()
-
     cur.execute("SELECT idmotos, marca, modelo, patente FROM motos")
     motos = cur.fetchall()
+    cur.execute("SELECT idmecanicos, nombre, apellido FROM mecanicos")
+    mecanicos = cur.fetchall()
     cur.close()
-    return render_template('form_servicio.html', reparacion=reparacion, motos=motos)
+    return render_template('form_servicio.html', reparacion=reparacion, motos=motos, mecanicos=mecanicos)
 
 # BAJA servicio (Delete)
 @app.route('/servicios/eliminar/<int:id_reparacion>')
@@ -323,31 +349,61 @@ def historial_moto(id_moto):
 
     return render_template('historial_moto.html', moto=moto, reparaciones=reparaciones)
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
 # LOGIN
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        usuario = request.form['usuario'].strip()
+        correo = request.form['correo'].strip()
         contrasena = request.form['contrasena']
 
         cur = mysql.connection.cursor()
-        cur.execute("SELECT * FROM usuarios WHERE usuario=%s", (usuario,))
+        cur.execute("SELECT * FROM usuarios WHERE correo=%s", (correo,))
         usuario_db = cur.fetchone()
         cur.close()
 
         if usuario_db and bcrypt.check_password_hash(usuario_db[2], contrasena):
-            session['usuario'] = usuario_db[1]
+            session['correo'] = usuario_db[1]
             return redirect(url_for('listar_clientes'))
         else:
-            return render_template('login.html', error="Usuario o contraseña incorrectos.")
+            return render_template('login.html', error="Correo o contraseña incorrectos.")
 
     return render_template('login.html', error=None)
 
 # LOGOUT
 @app.route('/logout')
 def logout():
-    session.pop('usuario', None)
-    return redirect(url_for('login'))
+    session.pop('correo', None)
+    return redirect(url_for('index'))
+
+# REGISTRO
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if request.method == 'POST':
+        correo = request.form['correo'].strip()
+        contrasena = request.form['contrasena']
+        confirmar = request.form['confirmar']
+
+        if contrasena != confirmar:
+            return render_template('registro.html', error="Las contraseñas no coinciden.")
+
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT idusuarios FROM usuarios WHERE correo=%s", (correo,))
+        if cur.fetchone():
+            cur.close()
+            return render_template('registro.html', error="Ese correo ya está registrado.")
+
+        hash_contrasena = bcrypt.generate_password_hash(contrasena).decode('utf-8')
+        cur.execute("INSERT INTO usuarios (correo, contrasena) VALUES (%s, %s)",
+                    (correo, hash_contrasena))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('login'))
+
+    return render_template('registro.html', error=None)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -6,7 +6,7 @@
     <table>
         <tr>
             <th>Moto</th><th>Descripción</th><th>Ingreso</th><th>Salida</th>
-            <th>Costo</th><th>Estado</th><th>Acciones</th>
+            <th>Costo</th><th>Estado</th><th>Mecánico</th><th>Acciones</th>
         </tr>
         {% for r in reparaciones %}
         <tr>
@@ -16,6 +16,7 @@
             <td>{{ r[3] if r[3] else '-' }}</td>
             <td>${{ r[4] }}</td>
             <td class="estado-{{ r[5] }}">{{ r[5] }}</td>
+            <td>{{ r[10] }} {{ r[11] }}</td>
             <td>
                 <a href="{{ url_for('editar_servicio', id_reparacion=r[0]) }}" class="accion-editar">Editar</a>
                 <a href="{{ url_for('eliminar_servicio', id_reparacion=r[0]) }}" class="accion-eliminar"

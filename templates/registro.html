@@ -1,0 +1,16 @@
+{% extends "base_publico.html" %}
+{% block title %}Registro{% endblock %}
+{% block contenido %}
+    <form method="POST">
+        <h1 style="text-align:center; font-size:22px;">Crear cuenta</h1>
+        <label>Correo</label>
+        <input type="email" name="correo" required>
+        <label>Contraseña</label>
+        <input type="password" name="contrasena" required>
+        <label>Confirmar contraseña</label>
+        <input type="password" name="confirmar" required>
+        <button type="submit">Registrarme</button>
+        {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    </form>
+    <a href="{{ url_for('login') }}" class="volver">← Ya tengo cuenta, iniciar sesión</a>
+{% endblock %}
