@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Resultados de búsqueda{% endblock %}
+{% block contenido %}
+    <h1>Resultados para "{{ q }}"</h1>
+
+    {% set total_resultados = resultados.clientes|length + resultados.motos|length + resultados.servicios|length + resultados.mecanicos|length %}
+
+    {% if total_resultados == 0 %}
+    <p>No se encontraron resultados.</p>
+    {% endif %}
+
+    {% if resultados.clientes %}
+    <div class="resultado-seccion">
+        <h2>Clientes ({{ resultados.clientes|length }})</h2>
+        <table>
+            <tr><th>Nombre</th><th>Apellido</th><th>Teléfono</th><th>Dirección</th><th>Acciones</th></tr>
+            {% for c in resultados.clientes %}
+            <tr>
+                <td>{{ c[1] }}</td><td>{{ c[2] }}</td><td>{{ c[3] }}</td><td>{{ c[4] }}</td>
+                <td><a href="{{ url_for('editar_cliente', id_cliente=c[0]) }}" class="accion-editar">Editar</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+
+    {% if resultados.motos %}
+    <div class="resultado-seccion">
+        <h2>Motos ({{ resultados.motos|length }})</h2>
+        <table>
+            <tr><th>Marca</th><th>Modelo</th><th>Patente</th><th>Año</th><th>Dueño</th><th>Acciones</th></tr>
+            {% for m in resultados.motos %}
+            <tr>
+                <td>{{ m[1] }}</td><td>{{ m[2] }}</td><td>{{ m[3] }}</td><td>{{ m[4] }}</td>
+                <td>{{ m[5] }} {{ m[6] }}</td>
+                <td><a href="{{ url_for('editar_moto', id_moto=m[0]) }}" class="accion-editar">Editar</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+
+    {% if resultados.servicios %}
+    <div class="resultado-seccion">
+        <h2>Servicios ({{ resultados.servicios|length }})</h2>
+        <table>
+            <tr><th>Descripción</th><th>Estado</th><th>Moto</th><th>Mecánico</th><th>Acciones</th></tr>
+            {% for s in resultados.servicios %}
+            <tr>
+                <td>{{ s[1] }}</td>
+                <td class="estado-{{ s[2] }}">{{ s[2] }}</td>
+                <td>{{ s[3] }} {{ s[4] }} ({{ s[5] }})</td>
+                <td>{{ s[6] }} {{ s[7] }}</td>
+                <td><a href="{{ url_for('editar_servicio', id_reparacion=s[0]) }}" class="accion-editar">Editar</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+
+    {% if resultados.mecanicos %}
+    <div class="resultado-seccion">
+        <h2>Mecánicos ({{ resultados.mecanicos|length }})</h2>
+        <table>
+            <tr><th>Nombre</th><th>Apellido</th><th>Documento</th><th>Teléfono</th><th>Acciones</th></tr>
+            {% for me in resultados.mecanicos %}
+            <tr>
+                <td>{{ me[1] }}</td><td>{{ me[2] }}</td><td>{{ me[3] }}</td><td>{{ me[4] }}</td>
+                <td><a href="{{ url_for('editar_mecanico', id_mecanico=me[0]) }}" class="accion-editar">Editar</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+{% endblock %}

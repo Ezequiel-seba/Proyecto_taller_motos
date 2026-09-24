@@ -9,21 +9,29 @@
             background-color: #2c3e50;
             padding: 15px 40px;
             display: flex;
+            align-items: center;
             gap: 25px;
         }
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-        }
+        .navbar a { color: white; text-decoration: none; font-weight: bold; }
         .navbar a:hover { text-decoration: underline; }
+        .navbar-buscador { margin-left: auto; display: flex; gap: 8px; }
+        .navbar-buscador input { padding: 6px 10px; border-radius: 4px; border: none; width: 220px; }
+        .navbar-buscador button {
+            background-color: #2c7be5; color: white; border: none; padding: 6px 14px;
+            border-radius: 4px; cursor: pointer;
+        }
         .contenido { padding: 40px; }
         h1 { color: #2c3e50; }
         .btn-nuevo { display: inline-block; background-color: #2c7be5; color: white; padding: 8px 16px;
                      border-radius: 5px; text-decoration: none; margin-bottom: 20px; }
         .btn-nuevo:hover { background-color: #1a5bb8; }
         table { width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
         th { background-color: #2c3e50; color: white; }
         tr:hover { background-color: #f1f5f9; }
         a.accion-editar { color: #2c7be5; text-decoration: none; }
@@ -40,6 +48,12 @@
         button:hover { background-color: #1a5bb8; }
         .volver { display: inline-block; margin-top: 15px; color: #555; text-decoration: none; }
         .volver:hover { text-decoration: underline; }
+        .paginacion { margin-top: 20px; display: flex; align-items: center; gap: 15px; }
+        .paginacion a { color: #2c7be5; text-decoration: none; font-weight: bold; }
+        .paginacion a:hover { text-decoration: underline; }
+        .paginacion .deshabilitado { color: #aaa; }
+        .resultado-seccion { margin-top: 30px; }
+        .resultado-seccion h2 { color: #2c3e50; font-size: 18px; }
     </style>
 </head>
 <body>
@@ -48,6 +62,10 @@
         <a href="{{ url_for('listar_motos') }}">Motos</a>
         <a href="{{ url_for('listar_reparaciones_servicios') }}">Servicios</a>
         <a href="{{ url_for('listar_mecanicos') }}">Mecánicos</a>
+         <form method="GET" action="{{ url_for('buscar') }}" class="navbar-buscador">
+            <input type="text" name="q" placeholder="Buscar en todo el sistema...">
+            <button type="submit">Buscar</button>
+        </form>
         <a href="{{ url_for('logout') }}" style="margin-left: auto;">Cerrar sesión</a>
     </div>
     <div class="contenido">

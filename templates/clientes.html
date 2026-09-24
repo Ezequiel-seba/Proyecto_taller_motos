@@ -21,4 +21,17 @@
         </tr>
         {% endfor %}
     </table>
+    <div class="paginacion">
+        {% if pagina > 1 %}
+        <a href="{{ url_for('listar_clientes', page=pagina-1, q=busqueda) }}">← Anterior</a>
+        {% else %}
+        <span class="deshabilitado">← Anterior</span>
+        {% endif %}
+        <span>Página {{ pagina }} de {{ total_paginas }}</span>
+        {% if pagina < total_paginas %}
+        <a href="{{ url_for('listar_clientes', page=pagina+1, q=busqueda) }}">Siguiente →</a>
+        {% else %}
+        <span class="deshabilitado">Siguiente →</span>
+        {% endif %}
+    </div>
 {% endblock %}

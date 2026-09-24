@@ -12,7 +12,7 @@
         <tr>
             <td>
                 {% if m[7] %}
-                <img src="{{ url_for('static', filename='uploads/motos/' + m[7]) }}" width="60">
+                <img src="{{ url_for('static', filename='uploads/motos/' + m[7]) }}" width="150" style="max-height: 150px; object-fit: cover;">
                 {% else %}
                 -
                 {% endif %}
@@ -31,4 +31,17 @@
         </tr>
         {% endfor %}
     </table>
+    <div class="paginacion">
+        {% if pagina > 1 %}
+        <a href="{{ url_for('listar_motos', page=pagina-1, q=busqueda) }}">← Anterior</a>
+        {% else %}
+        <span class="deshabilitado">← Anterior</span>
+        {% endif %}
+        <span>Página {{ pagina }} de {{ total_paginas }}</span>
+        {% if pagina < total_paginas %}
+        <a href="{{ url_for('listar_motos', page=pagina+1, q=busqueda) }}">Siguiente →</a>
+        {% else %}
+        <span class="deshabilitado">Siguiente →</span>
+        {% endif %}
+    </div>
 {% endblock %}

@@ -25,15 +25,43 @@ def login_requerido(f):
         return f(*args, **kwargs)
     return decorada
 
-# LISTAR (Read)
+# LISTAR motos(Read)
 @app.route('/clientes')
 @login_requerido
 def listar_clientes():
+    busqueda = request.args.get('q', '').strip()
+    pagina = request.args.get('page', 1, type=int)
+    por_pagina = 10
+    offset = (pagina - 1) * por_pagina
+
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM clientes")
-    clientes = cur.fetchall()
+
+    base_query = """SELECT motos.idmotos, motos.marca, motos.modelo, motos.patente,
+                            motos.ano, clientes.nombre, clientes.apellido, motos.foto
+                     FROM motos
+                     JOIN clientes ON motos.idclientes = clientes.idclientes"""
+
+    if busqueda:
+        like = f"%{busqueda}%"
+        cur.execute("""SELECT * FROM clientes
+                       WHERE nombre LIKE %s OR apellido LIKE %s OR telefono LIKE %s
+                       LIMIT %s OFFSET %s""", (like, like, like, por_pagina, offset))
+        clientes = cur.fetchall()
+        cur.execute("""SELECT COUNT(*) FROM clientes
+                       WHERE nombre LIKE %s OR apellido LIKE %s OR telefono LIKE %s""",
+                    (like, like, like))
+        total = cur.fetchone()[0]
+    else:
+        cur.execute("SELECT * FROM clientes LIMIT %s OFFSET %s", (por_pagina, offset))
+        clientes = cur.fetchall()
+        cur.execute("SELECT COUNT(*) FROM clientes")
+        total = cur.fetchone()[0]
+
     cur.close()
-    return render_template('clientes.html', clientes=clientes)
+    total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
+
+    return render_template('clientes.html', clientes=clientes, busqueda=busqueda,
+                            pagina=pagina, total_paginas=total_paginas)
 
 # ALTA (Create)
 @app.route('/clientes/nuevo', methods=['GET', 'POST'])
@@ -93,14 +121,23 @@ def eliminar_cliente(id_cliente):
 @app.route('/motos')
 @login_requerido
 def listar_motos():
+    pagina = request.args.get('page', 1, type=int)
+    por_pagina = 10
+    offset = (pagina - 1) * por_pagina
+
     cur = mysql.connection.cursor()
     cur.execute("""SELECT motos.idmotos, motos.marca, motos.modelo, motos.patente,
                           motos.ano, clientes.nombre, clientes.apellido, motos.foto
                    FROM motos
-                   JOIN clientes ON motos.idclientes = clientes.idclientes""")
+                   JOIN clientes ON motos.idclientes = clientes.idclientes
+                   LIMIT %s OFFSET %s""", (por_pagina, offset))
     motos = cur.fetchall()
+    cur.execute("SELECT COUNT(*) FROM motos")
+    total = cur.fetchone()[0]
     cur.close()
-    return render_template('motos.html', motos=motos)
+
+    total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
+    return render_template('motos.html', motos=motos, pagina=pagina, total_paginas=total_paginas)
 
 # ALTA moto (Create)
 @app.route('/motos/nueva', methods=['GET', 'POST'])
@@ -183,18 +220,49 @@ def eliminar_moto(id_moto):
 @app.route('/servicios')
 @login_requerido
 def listar_reparaciones_servicios():
+    busqueda = request.args.get('q', '').strip()
+    pagina = request.args.get('page', 1, type=int)
+    por_pagina = 10
+    offset = (pagina - 1) * por_pagina
+
     cur = mysql.connection.cursor()
-    cur.execute("""SELECT servicios.idservicios, servicios.Descripcion,
-                          servicios.fecha_ingreso, servicios.fecha_salida,
-                          servicios.costo, servicios.estado,
-                          motos.marca, motos.modelo, motos.patente, motos.idmotos,
-                          mecanicos.nombre, mecanicos.apellido
-                   FROM servicios
-                   JOIN motos ON servicios.idmotos = motos.idmotos
-                   JOIN mecanicos ON servicios.idmecanicos = mecanicos.idmecanicos""")
-    reparaciones = cur.fetchall()
+
+    base_query = """SELECT servicios.idservicios, servicios.Descripcion,
+                            servicios.fecha_ingreso, servicios.fecha_salida,
+                            servicios.costo, servicios.estado,
+                            motos.marca, motos.modelo, motos.patente, motos.idmotos,
+                            mecanicos.nombre, mecanicos.apellido
+                     FROM servicios
+                     JOIN motos ON servicios.idmotos = motos.idmotos
+                     JOIN mecanicos ON servicios.idmecanicos = mecanicos.idmecanicos"""
+
+    if busqueda:
+        like = f"%{busqueda}%"
+        cur.execute(base_query + """ WHERE servicios.Descripcion LIKE %s
+                                      OR servicios.estado LIKE %s
+                                      OR motos.patente LIKE %s
+                                      LIMIT %s OFFSET %s""",
+                    (like, like, like, por_pagina, offset))
+        reparaciones = cur.fetchall()
+
+        cur.execute("""SELECT COUNT(*) FROM servicios
+                       JOIN motos ON servicios.idmotos = motos.idmotos
+                       WHERE servicios.Descripcion LIKE %s
+                       OR servicios.estado LIKE %s
+                       OR motos.patente LIKE %s""",
+                    (like, like, like))
+        total = cur.fetchone()[0]
+    else:
+        cur.execute(base_query + " LIMIT %s OFFSET %s", (por_pagina, offset))
+        reparaciones = cur.fetchall()
+        cur.execute("SELECT COUNT(*) FROM servicios")
+        total = cur.fetchone()[0]
+
     cur.close()
-    return render_template('servicios.html', reparaciones=reparaciones)
+    total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
+
+    return render_template('servicios.html', reparaciones=reparaciones, busqueda=busqueda,
+                            pagina=pagina, total_paginas=total_paginas)
 
 # ALTA servicio (Create)
 @app.route('/servicios/nueva', methods=['GET', 'POST'])
@@ -271,11 +339,35 @@ def eliminar_servicio(id_reparacion):
 @app.route('/mecanicos')
 @login_requerido
 def listar_mecanicos():
+    busqueda = request.args.get('q', '').strip()
+    pagina = request.args.get('page', 1, type=int)
+    por_pagina = 10
+    offset = (pagina - 1) * por_pagina
+
     cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM mecanicos")
-    mecanicos = cur.fetchall()
+
+    if busqueda:
+        like = f"%{busqueda}%"
+        cur.execute("""SELECT * FROM mecanicos
+                       WHERE nombre LIKE %s OR apellido LIKE %s OR documento LIKE %s
+                       LIMIT %s OFFSET %s""", (like, like, like, por_pagina, offset))
+        mecanicos = cur.fetchall()
+
+        cur.execute("""SELECT COUNT(*) FROM mecanicos
+                       WHERE nombre LIKE %s OR apellido LIKE %s OR documento LIKE %s""",
+                    (like, like, like))
+        total = cur.fetchone()[0]
+    else:
+        cur.execute("SELECT * FROM mecanicos LIMIT %s OFFSET %s", (por_pagina, offset))
+        mecanicos = cur.fetchall()
+        cur.execute("SELECT COUNT(*) FROM mecanicos")
+        total = cur.fetchone()[0]
+
     cur.close()
-    return render_template('mecanicos.html', mecanicos=mecanicos)
+    total_paginas = max(1, (total + por_pagina - 1) // por_pagina)
+
+    return render_template('mecanicos.html', mecanicos=mecanicos, busqueda=busqueda,
+                            pagina=pagina, total_paginas=total_paginas)
 
 # ALTA mecánico (Create)
 @app.route('/mecanicos/nuevo', methods=['GET', 'POST'])
@@ -404,6 +496,54 @@ def registro():
         return redirect(url_for('login'))
 
     return render_template('registro.html', error=None)
+
+# BUSQUEDA
+@app.route('/buscar')
+@login_requerido
+def buscar():
+    q = request.args.get('q', '').strip()
+    resultados = {'clientes': [], 'motos': [], 'servicios': [], 'mecanicos': []}
+
+    if q:
+        like = f"%{q}%"
+        cur = mysql.connection.cursor()
+
+        cur.execute("""SELECT * FROM clientes
+                       WHERE nombre LIKE %s OR apellido LIKE %s
+                       OR telefono LIKE %s OR direccion LIKE %s""",
+                    (like, like, like, like))
+        resultados['clientes'] = cur.fetchall()
+
+        cur.execute("""SELECT motos.idmotos, motos.marca, motos.modelo, motos.patente,
+                              motos.ano, clientes.nombre, clientes.apellido
+                       FROM motos
+                       JOIN clientes ON motos.idclientes = clientes.idclientes
+                       WHERE motos.marca LIKE %s OR motos.modelo LIKE %s OR motos.patente LIKE %s
+                       OR clientes.nombre LIKE %s OR clientes.apellido LIKE %s""",
+                    (like, like, like, like, like))
+        resultados['motos'] = cur.fetchall()
+
+        cur.execute("""SELECT servicios.idservicios, servicios.Descripcion, servicios.estado,
+                              motos.marca, motos.modelo, motos.patente,
+                              mecanicos.nombre, mecanicos.apellido
+                       FROM servicios
+                       JOIN motos ON servicios.idmotos = motos.idmotos
+                       JOIN mecanicos ON servicios.idmecanicos = mecanicos.idmecanicos
+                       WHERE servicios.Descripcion LIKE %s OR servicios.estado LIKE %s
+                       OR motos.patente LIKE %s
+                       OR mecanicos.nombre LIKE %s OR mecanicos.apellido LIKE %s""",
+                    (like, like, like, like, like))
+        resultados['servicios'] = cur.fetchall()
+
+        cur.execute("""SELECT * FROM mecanicos
+                       WHERE nombre LIKE %s OR apellido LIKE %s
+                       OR documento LIKE %s OR telefono LIKE %s""",
+                    (like, like, like, like))
+        resultados['mecanicos'] = cur.fetchall()
+
+        cur.close()
+
+    return render_template('resultados_busqueda.html', q=q, resultados=resultados)
 
 if __name__ == '__main__':
     app.run(debug=True)
